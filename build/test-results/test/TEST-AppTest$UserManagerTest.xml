@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="UserManager Tests" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-02-23T15:49:24.514Z" hostname="DESKTOP-NQL46C6" time="0.023">
+<testsuite name="UserManager Tests" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-03-07T18:54:02.202Z" hostname="DESKTOP-NQL46C6" time="0.021">
   <properties/>
   <testcase name="Should throw exception when updating nonexistent user" classname="AppTest$UserManagerTest" time="0.002"/>
-  <testcase name="Should filter users correctly" classname="AppTest$UserManagerTest" time="0.005"/>
-  <testcase name="Should add user successfully" classname="AppTest$UserManagerTest" time="0.001"/>
+  <testcase name="Should filter users correctly" classname="AppTest$UserManagerTest" time="0.004"/>
+  <testcase name="Should add user successfully" classname="AppTest$UserManagerTest" time="0.002"/>
   <testcase name="Should update user successfully" classname="AppTest$UserManagerTest" time="0.001"/>
-  <testcase name="Should remove user successfully" classname="AppTest$UserManagerTest" time="0.0"/>
-  <testcase name="Should find user by email" classname="AppTest$UserManagerTest" time="0.002"/>
-  <testcase name="Should sort users correctly" classname="AppTest$UserManagerTest" time="0.003"/>
-  <testcase name="Should throw exception when adding duplicate user" classname="AppTest$UserManagerTest" time="0.002"/>
+  <testcase name="Should remove user successfully" classname="AppTest$UserManagerTest" time="0.001"/>
+  <testcase name="Should find user by email" classname="AppTest$UserManagerTest" time="0.001"/>
+  <testcase name="Should sort users correctly" classname="AppTest$UserManagerTest" time="0.002"/>
+  <testcase name="Should throw exception when adding duplicate user" classname="AppTest$UserManagerTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="RoleManager Tests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-02-23T15:49:24.484Z" hostname="DESKTOP-NQL46C6" time="0.028">
+<testsuite name="RoleManager Tests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-03-07T18:54:02.179Z" hostname="DESKTOP-NQL46C6" time="0.022">
   <properties/>
-  <testcase name="Should filter roles correctly" classname="AppTest$RoleManagerTest" time="0.007"/>
-  <testcase name="Should add role successfully" classname="AppTest$RoleManagerTest" time="0.002"/>
+  <testcase name="Should filter roles correctly" classname="AppTest$RoleManagerTest" time="0.004"/>
+  <testcase name="Should add role successfully" classname="AppTest$RoleManagerTest" time="0.001"/>
   <testcase name="Should add permission to role" classname="AppTest$RoleManagerTest" time="0.001"/>
   <testcase name="Should sort roles by permission count" classname="AppTest$RoleManagerTest" time="0.006"/>
   <testcase name="Should find roles with specific permission" classname="AppTest$RoleManagerTest" time="0.003"/>

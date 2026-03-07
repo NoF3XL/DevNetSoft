@@ -60,12 +60,10 @@ public class RBACSystem {
     }
 
     String generateStatistics(){
-        StringBuilder stats = new StringBuilder();
-        stats.append("Current administrator: ").append(currentUser).append("\n");
-        stats.append("Total users: ").append(userManager.count()).append("\n");
-        stats.append("Total roles: ").append(roleManager.count()).append("\n");
-        stats.append("Role details:\n");
-        stats.append("Total assignments: ").append(assignmentManager.count()).append("\n");
-        return stats.toString();
+        return "Current administrator: " + currentUser + "\n" +
+                "Total users: " + userManager.count() + "\n" +
+                "Total roles: " + roleManager.count() + "\n" +
+                "Role details:\n" +
+                "Total assignments: " + assignmentManager.count() + "\n";
     }
 }
