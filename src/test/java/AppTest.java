@@ -253,7 +253,6 @@ public class AppTest {
             metadata = AssignmentMetadata.now("admin", "Test assignment");
             permanentAssignment = new PermanentAssignment(testUser, adminRole, metadata);
 
-            // Используем правильный формат даты: yyyy-MM-dd HH:mm
             String futureDate = LocalDateTime.now().plusDays(10).format(dateFormatter);
             temporaryAssignment = new TemporaryAssignment(anotherUser, viewerRole, metadata, futureDate, false);
         }
@@ -487,18 +486,14 @@ public class AppTest {
         @Test
         @DisplayName("Complete RBAC flow test")
         void testCompleteRBACFlow() {
-            // Create users
             userManager.add(testUser);
             userManager.add(anotherUser);
-
-            // Create roles and permissions
             roleManager.add(adminRole);
             roleManager.add(viewerRole);
 
             Permission deletePermission = new Permission("DELETE", "users", "Can delete users");
             roleManager.addPermissionToRole("Administrator", deletePermission);
 
-            // Assign roles to users
             AssignmentMetadata adminMeta = AssignmentMetadata.now("system", "Initial admin assignment");
             AssignmentMetadata viewerMeta = AssignmentMetadata.now("system", "Initial viewer assignment");
 
@@ -509,31 +504,18 @@ public class AppTest {
 
             assignmentManager.add(adminAssignment);
             assignmentManager.add(viewerAssignment);
-
-            // Verify permissions
             assertTrue(assignmentManager.userHasPermission(testUser, "READ", "users"));
             assertTrue(assignmentManager.userHasPermission(testUser, "WRITE", "users"));
             assertTrue(assignmentManager.userHasPermission(testUser, "DELETE", "users"));
-
             assertTrue(assignmentManager.userHasPermission(anotherUser, "READ", "users"));
             assertFalse(assignmentManager.userHasPermission(anotherUser, "WRITE", "users"));
-
-            // Filter active assignments
             List<RoleAssignment> active = assignmentManager.getActiveAssignments();
             assertEquals(2, active.size());
-
-            // Revoke one assignment
             assignmentManager.revokeAssignment(adminAssignment.assignmentId());
-
-            // Check permissions after revocation
             assertFalse(assignmentManager.userHasPermission(testUser, "READ", "users"));
             assertTrue(assignmentManager.userHasPermission(anotherUser, "READ", "users"));
-
-            // Extend temporary assignment
             String newExpiry = LocalDateTime.now().plusDays(60).format(dateFormatter);
             assignmentManager.extendTemporaryAssignment(viewerAssignment.assignmentId(), newExpiry);
-
-            // Verify extension
             assertEquals(newExpiry, ((TemporaryAssignment) viewerAssignment).getExpiresAt());
         }
     }
