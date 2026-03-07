@@ -2,6 +2,7 @@ public class RBACSystem {
     UserManager userManager;
     RoleManager roleManager;
     AssignmentManager assignmentManager;
+    CommandParser commandParser;
     String currentUser;
 
     public UserManager getUserManager(){

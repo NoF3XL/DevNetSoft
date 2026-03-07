@@ -31,7 +31,6 @@ public class CommandParser {
         for (Map.Entry<String, String> entry : commandDescriptions.entrySet()) {
             System.out.println("  " + entry.getKey() + " — " + entry.getValue());
         }
-        System.out.println("\nДля получения подробной информации введите 'help <команда>'");
     }
 
     public void parseAndExecute(String input, Scanner scanner, RBACSystem system) {
