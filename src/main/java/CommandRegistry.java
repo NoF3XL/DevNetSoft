@@ -45,6 +45,7 @@ public class CommandRegistry {
         // Служебные команды
         parser.registerCommand("help", "справка по командам", CommandRegistry::help);
         parser.registerCommand("stats", "статистика системы", CommandRegistry::stats);
+        parser.registerCommand("audit-log", "просмотр лога аудита", CommandRegistry::auditLog);
         parser.registerCommand("clear", "очистить экран", CommandRegistry::clear);
         parser.registerCommand("exit", "выход из программы", CommandRegistry::exit);
     }
@@ -83,6 +84,8 @@ public class CommandRegistry {
             User user = User.create(username, fullName, email);
             system.getUserManager().add(user);
             System.out.println("Пользователь '" + username + "' успешно создан.");
+            system.getAuditLog().log("USER_CREATE", system.getCurrentUser(), username,
+                "Пользователь создан: " + fullName + " <" + email + ">");
         } catch (IllegalArgumentException e) {
             System.out.println("Ошибка создания пользователя: " + e.getMessage());
         }
@@ -135,6 +138,7 @@ public class CommandRegistry {
         boolean removed = system.getUserManager().removeByUsername(username);
         if (removed) {
             System.out.println("Пользователь '" + username + "' успешно удален.");
+            system.getAuditLog().log("USER_DELETE", system.getCurrentUser(), username, "Пользователь удален");
         } else {
             System.out.println("Не удалось удалить пользователя.");
         }
@@ -208,6 +212,7 @@ public class CommandRegistry {
             Role role = new Role(name, description);
             system.getRoleManager().add(role);
             System.out.println("Роль '" + name + "' успешно создана.");
+            system.getAuditLog().log("ROLE_CREATE", system.getCurrentUser(), name, "Роль создана: " + description);
         } catch (IllegalArgumentException e) {
             System.out.println("Ошибка создания роли: " + e.getMessage());
         }
@@ -251,6 +256,7 @@ public class CommandRegistry {
             boolean removed = system.getRoleManager().remove(role);
             if (removed) {
                 System.out.println("Роль '" + name + "' успешно удалена.");
+                system.getAuditLog().log("ROLE_DELETE", system.getCurrentUser(), name, "Роль удалена");
             } else {
                 System.out.println("Не удалось удалить роль.");
             }
@@ -416,6 +422,8 @@ public class CommandRegistry {
             
             system.getAssignmentManager().add(assignment);
             System.out.println("Роль '" + role.getName() + "' успешно назначена пользователю '" + username + "'");
+            system.getAuditLog().log("ROLE_ASSIGN", system.getCurrentUser(), username + " -> " + role.getName(),
+                "Тип: " + (isTemporary ? "временное" : "постоянное") + ", причина: " + reason);
         } catch (NumberFormatException e) {
             System.out.println("Некорректный ввод.");
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -452,6 +460,9 @@ public class CommandRegistry {
             RoleAssignment assignment = activeAssignments.get(choice - 1);
             system.getAssignmentManager().revokeAssignment(assignment.assignmentId());
             System.out.println("Назначение отозвано.");
+            system.getAuditLog().log("ROLE_REVOKE", system.getCurrentUser(),
+                assignment.user().username() + " -> " + assignment.role().getName(),
+                "Назначение отозвано");
         } catch (NumberFormatException e) {
             System.out.println("Некорректный ввод.");
         } catch (IllegalArgumentException e) {
@@ -630,6 +641,10 @@ public class CommandRegistry {
     
     private static void stats(Scanner scanner, RBACSystem system) {
         System.out.println(system.generateStatistics());
+    }
+    
+    private static void auditLog(Scanner scanner, RBACSystem system) {
+        system.getAuditLog().printLog();
     }
     
     private static void clear(Scanner scanner, RBACSystem system) {

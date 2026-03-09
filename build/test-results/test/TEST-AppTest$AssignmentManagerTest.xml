@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="AssignmentManager Tests" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-03-09T11:16:16.142Z" hostname="DESKTOP-NQL46C6" time="0.089">
+<testsuite name="AssignmentManager Tests" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-03-09T11:47:26.740Z" hostname="DESKTOP-NQL46C6" time="0.069">
   <properties/>
-  <testcase name="Should get assignments expiring before date" classname="AppTest$AssignmentManagerTest" time="0.007"/>
-  <testcase name="Should add assignment successfully" classname="AppTest$AssignmentManagerTest" time="0.005"/>
-  <testcase name="Should filter assignments correctly" classname="AppTest$AssignmentManagerTest" time="0.007"/>
-  <testcase name="Should revoke permanent assignment" classname="AppTest$AssignmentManagerTest" time="0.004"/>
-  <testcase name="Should find assignments by role" classname="AppTest$AssignmentManagerTest" time="0.002"/>
+  <testcase name="Should get assignments expiring before date" classname="AppTest$AssignmentManagerTest" time="0.004"/>
+  <testcase name="Should add assignment successfully" classname="AppTest$AssignmentManagerTest" time="0.003"/>
+  <testcase name="Should filter assignments correctly" classname="AppTest$AssignmentManagerTest" time="0.005"/>
+  <testcase name="Should revoke permanent assignment" classname="AppTest$AssignmentManagerTest" time="0.002"/>
+  <testcase name="Should find assignments by role" classname="AppTest$AssignmentManagerTest" time="0.003"/>
   <testcase name="Should find assignments by user" classname="AppTest$AssignmentManagerTest" time="0.002"/>
   <testcase name="Should remove temporary assignment when revoked" classname="AppTest$AssignmentManagerTest" time="0.002"/>
   <testcase name="Should sort assignments correctly" classname="AppTest$AssignmentManagerTest" time="0.004"/>
-  <testcase name="Should throw exception when adding duplicate assignment" classname="AppTest$AssignmentManagerTest" time="0.005"/>
-  <testcase name="Should get active assignments correctly" classname="AppTest$AssignmentManagerTest" time="0.005"/>
+  <testcase name="Should throw exception when adding duplicate assignment" classname="AppTest$AssignmentManagerTest" time="0.003"/>
+  <testcase name="Should get active assignments correctly" classname="AppTest$AssignmentManagerTest" time="0.002"/>
   <testcase name="Should check if user has permission correctly" classname="AppTest$AssignmentManagerTest" time="0.002"/>
-  <testcase name="Should check if user has role correctly" classname="AppTest$AssignmentManagerTest" time="0.004"/>
-  <testcase name="Should extend temporary assignment" classname="AppTest$AssignmentManagerTest" time="0.004"/>
-  <testcase name="Should throw exception when adding assignment for nonexistent user" classname="AppTest$AssignmentManagerTest" time="0.004"/>
-  <testcase name="Should get user permissions correctly" classname="AppTest$AssignmentManagerTest" time="0.003"/>
+  <testcase name="Should check if user has role correctly" classname="AppTest$AssignmentManagerTest" time="0.002"/>
+  <testcase name="Should extend temporary assignment" classname="AppTest$AssignmentManagerTest" time="0.002"/>
+  <testcase name="Should throw exception when adding assignment for nonexistent user" classname="AppTest$AssignmentManagerTest" time="0.001"/>
+  <testcase name="Should get user permissions correctly" classname="AppTest$AssignmentManagerTest" time="0.004"/>
   <testcase name="Should throw exception when extending non-temporary assignment" classname="AppTest$AssignmentManagerTest" time="0.003"/>
   <testcase name="Should throw exception when adding duplicate active assignment" classname="AppTest$AssignmentManagerTest" time="0.004"/>
   <system-out><![CDATA[]]></system-out>

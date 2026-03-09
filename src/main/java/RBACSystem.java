@@ -3,6 +3,7 @@ public class RBACSystem {
     RoleManager roleManager;
     AssignmentManager assignmentManager;
     CommandParser commandParser;
+    AuditLog auditLog;
     String currentUser;
 
     public UserManager getUserManager(){
@@ -17,6 +18,10 @@ public class RBACSystem {
         return this.assignmentManager;
     }
 
+    public AuditLog getAuditLog(){
+        return this.auditLog;
+    }
+
     void setCurrentUser(String username){
         this.currentUser = username;
     }
@@ -29,6 +34,7 @@ public class RBACSystem {
         userManager = new UserManager();
         roleManager = new RoleManager(assignmentManager);
         assignmentManager = new AssignmentManager(userManager, roleManager);
+        auditLog = new AuditLog();
 
         User testAdmin = User.create("admin_user", "Admin Full Name", "admin@example.com");
         userManager.add(testAdmin);
