@@ -12,16 +12,12 @@ public class Role {
     }
 
     private static String validateName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("Имя роли не может быть пустым");
-        }
+        ValidationUtils.requireNonEmpty(name, "Имя роли");
         return name.trim();
     }
 
     private static String validateDescription(String description) {
-        if (description == null) {
-            throw new IllegalArgumentException("Описание не может быть null");
-        }
+        ValidationUtils.requireNonEmpty(description, "Описание");
         return description.trim();
     }
 
@@ -33,9 +29,7 @@ public class Role {
     }
 
     public Role(String id, String name, String description) {
-        if (id == null || id.trim().isEmpty()) {
-            throw new IllegalArgumentException("ID не может быть пустым");
-        }
+        ValidationUtils.requireNonEmpty(id, "ID");
         this.id = id;
         this.name = validateName(name);
         this.description = validateDescription(description);

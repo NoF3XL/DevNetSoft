@@ -2,6 +2,7 @@ import java.util.regex.*;
 
 public record User(String username, String fullName, String email) {
 
+    // Паттерны оставлены для обратной совместимости, но теперь используются ValidationUtils
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{3,20}$");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s]+@[^\\s]+\\.[^\\s]+$");
 
@@ -20,19 +21,17 @@ public record User(String username, String fullName, String email) {
     }
 
     private static void validateUsername(String username) {
-        if (username == null || !USERNAME_PATTERN.matcher(username).matches()) {
+        if (!ValidationUtils.isValidUsername(username)) {
             throw new IllegalArgumentException();
         }
     }
 
     private static void validateFullName(String fullName) {
-        if (fullName == null) {
-            throw new IllegalArgumentException();
-        }
+        ValidationUtils.requireNonEmpty(fullName, "fullName");
     }
 
     private static void validateEmail(String email) {
-        if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
+        if (!ValidationUtils.isValidEmail(email)) {
             throw new IllegalArgumentException("Неправильный email");
         }
     }

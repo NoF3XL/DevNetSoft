@@ -33,14 +33,9 @@ public record Permission(String name, String resource, String description) {
     }
 
     private static String normalizeName(String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("Name не может быть null");
-        }
-        String normalized = name.trim().toUpperCase();
-        if (normalized.isEmpty()) {
-            throw new IllegalArgumentException("Name не может быть пустым");
-        }
-        if (!NAME_PATTERN.matcher(normalized).matches()) {
+        ValidationUtils.requireNonEmpty(name, "Name");
+        String normalized = ValidationUtils.normalizePermissionName(name);
+        if (!ValidationUtils.isValidPermissionName(normalized)) {
             throw new IllegalArgumentException(
                     "Name должен содержать только буквы (в верхнем регистре) и без пробелов и может быть нижние подчеркивания"
             );
@@ -49,14 +44,9 @@ public record Permission(String name, String resource, String description) {
     }
 
     private static String normalizeResource(String resource) {
-        if (resource == null) {
-            throw new IllegalArgumentException("Resource не может быть null");
-        }
-        String normalized = resource.trim().toLowerCase();
-        if (normalized.isEmpty()) {
-            throw new IllegalArgumentException("Resource не может быть пустым");
-        }
-        if (!RESOURCE_PATTERN.matcher(normalized).matches()) {
+        ValidationUtils.requireNonEmpty(resource, "Resource");
+        String normalized = ValidationUtils.normalizeResourceName(resource);
+        if (!ValidationUtils.isValidResourceName(normalized)) {
             throw new IllegalArgumentException(
                     "Resource должен содержать только буквы, цифры и может быть нижние подчеркивания"
             );
@@ -65,14 +55,8 @@ public record Permission(String name, String resource, String description) {
     }
 
     private static String normalizeDescription(String description) {
-        if (description == null) {
-            throw new IllegalArgumentException("Description не может быть null");
-        }
-        String normalized = description.trim();
-        if (normalized.isEmpty()) {
-            throw new IllegalArgumentException("Description не может быть пустым");
-        }
-        return normalized;
+        ValidationUtils.requireNonEmpty(description, "Description");
+        return description.trim();
     }
 
     public static void main(String[] args) {

@@ -27,9 +27,7 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         this.autoRenew = autoRenew;
     }
     private String validateExpiresAt(String expiresAt) {
-        if (expiresAt == null || expiresAt.trim().isEmpty()) {
-            throw new IllegalArgumentException("expiresAt не может быть пустым");
-        }
+        ValidationUtils.requireNonEmpty(expiresAt, "expiresAt");
         String trimmed = expiresAt.trim();
         if (!isValidDateFormat(trimmed)) {
             throw new IllegalArgumentException(
@@ -40,16 +38,11 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
     }
 
     private boolean isValidDateFormat(String dateStr) {
-        try {
-            if (dateStr.length() == 10) { // yyyy-MM-dd
-                LocalDateTime.parse(dateStr + "T00:00:00");
-            } else if (dateStr.length() == 16) { // yyyy-MM-dd HH:mm
-                LocalDateTime.parse(dateStr.replace(" ", "T") + ":00");
-            } else {
-                return false;
-            }
-            return true;
-        } catch (Exception e) {
+        if (dateStr.length() == 10) { // yyyy-MM-dd
+            return ValidationUtils.isValidDate(dateStr);
+        } else if (dateStr.length() == 16) { // yyyy-MM-dd HH:mm
+            return ValidationUtils.isValidDateTime(dateStr);
+        } else {
             return false;
         }
     }
