@@ -49,55 +49,6 @@ public class ConsoleUtils {
         return colorize(text, ANSI_BLUE + ANSI_BOLD + ANSI_UNDERLINE);
     }
 
-    public static void printBoxed(String title, String content) {
-        int width = 60;
-        String border = "+" + repeatChar('-', width - 2) + "+";
-        System.out.println(border);
-        System.out.println("| " + padCenter(title, width - 4) + " |");
-        System.out.println(border);
-        String[] lines = content.split("\\n");
-        for (String line : lines) {
-            System.out.println("| " + padRight(line, width - 4) + " |");
-        }
-        System.out.println(border);
-    }
-
-    private static String repeatChar(char ch, int count) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            sb.append(ch);
-        }
-        return sb.toString();
-    }
-
-    private static String padRight(String s, int length) {
-        if (s.length() >= length) {
-            return s.substring(0, length);
-        }
-        StringBuilder sb = new StringBuilder(s);
-        while (sb.length() < length) {
-            sb.append(' ');
-        }
-        return sb.toString();
-    }
-
-    private static String padCenter(String s, int length) {
-        if (s.length() >= length) {
-            return s.substring(0, length);
-        }
-        int left = (length - s.length()) / 2;
-        int right = length - s.length() - left;
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < left; i++) {
-            sb.append(' ');
-        }
-        sb.append(s);
-        for (int i = 0; i < right; i++) {
-            sb.append(' ');
-        }
-        return sb.toString();
-    }
-
     public static String promptString(Scanner scanner, String message, boolean required) {
         while (true) {
             System.out.print(formatPrompt(message));
@@ -149,9 +100,5 @@ public class ConsoleUtils {
         }
         int choice = promptInt(scanner, message, 1, options.size());
         return options.get(choice - 1);
-    }
-
-    public static void printSeparator() {
-        System.out.println(repeatChar('=', 60));
     }
 }
