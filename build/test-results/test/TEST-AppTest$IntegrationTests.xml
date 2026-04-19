@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Integration Tests" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-03-09T13:21:19.878Z" hostname="DESKTOP-NQL46C6" time="0.085">
+  <properties/>
+  <testcase name="Complete RBAC flow test" classname="AppTest$IntegrationTests" time="0.07"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
