@@ -1,3 +1,6 @@
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class RBACSystem {
     UserManager userManager;
     RoleManager roleManager;
@@ -5,6 +8,7 @@ public class RBACSystem {
     CommandParser commandParser;
     AuditLog auditLog;
     String currentUser;
+    ExecutorService executorService;
 
     public UserManager getUserManager(){
         return this.userManager;
@@ -22,6 +26,10 @@ public class RBACSystem {
         return this.auditLog;
     }
 
+    public ExecutorService getExecutorService(){
+        return this.executorService;
+    }
+
     void setCurrentUser(String username){
         this.currentUser = username;
     }
@@ -32,9 +40,13 @@ public class RBACSystem {
 
     void initialize(){
         userManager = new UserManager();
-        roleManager = new RoleManager(assignmentManager);
+        roleManager = new RoleManager(null);
         assignmentManager = new AssignmentManager(userManager, roleManager);
+        roleManager.setAssignmentManager(assignmentManager);
         auditLog = new AuditLog();
+        executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        commandParser = new CommandParser();
+        CommandRegistry.registerAllCommands(commandParser);
 
         User testAdmin = User.create("admin_user", "Admin Full Name", "admin@example.com");
         userManager.add(testAdmin);
@@ -72,5 +84,14 @@ public class RBACSystem {
                 "Total roles: " + roleManager.count() + "\n" +
                 "Role details:\n" +
                 "Total assignments: " + assignmentManager.count() + "\n";
+    }
+
+    void shutdownExecutorService(){
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+        }
+        if (auditLog != null) {
+            auditLog.shutdown();
+        }
     }
 }

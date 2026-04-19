@@ -98,6 +98,13 @@ public class AssignmentManager implements Repository<RoleAssignment> {
                 .collect(Collectors.toList());
     }
 
+    public List<RoleAssignment> findByFilterParallel(AssignmentFilter filter) {
+        Objects.requireNonNull(filter, "Filter не может быть null");
+        return assignmentsById.values().parallelStream()
+                .filter(filter::test)
+                .collect(Collectors.toList());
+    }
+
     public List<RoleAssignment> findAll(AssignmentFilter filter, Comparator<RoleAssignment> sorter) {
         Objects.requireNonNull(filter, "Filter не может быть null");
         Objects.requireNonNull(sorter, "Sorter не может быть null");

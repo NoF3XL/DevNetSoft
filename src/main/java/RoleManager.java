@@ -6,11 +6,15 @@ public class RoleManager implements Repository<Role> {
 
     private final Map<String, Role> rolesById;
     private final Map<String, Role> rolesByName;
-    private final AssignmentManager assignmentManager;
+    private AssignmentManager assignmentManager;
 
     public RoleManager(AssignmentManager assignmentManager) {
         this.rolesById = new ConcurrentHashMap<>();
         this.rolesByName = new ConcurrentHashMap<>();
+        this.assignmentManager = assignmentManager;
+    }
+
+    public void setAssignmentManager(AssignmentManager assignmentManager) {
         this.assignmentManager = assignmentManager;
     }
 
@@ -36,6 +40,9 @@ public class RoleManager implements Repository<Role> {
     public boolean remove(Role role) {
         Objects.requireNonNull(role, "Role cannot be null");
         synchronized (rolesById) {
+            if (assignmentManager == null) {
+                throw new IllegalStateException("AssignmentManager not initialized");
+            }
             List<RoleAssignment> assignments = assignmentManager.findByRole(role);
             if (!assignments.isEmpty()) {
                 throw new IllegalStateException("Cannot delete role '" + role.getName() +
@@ -83,6 +90,13 @@ public class RoleManager implements Repository<Role> {
     public List<Role> findByFilter(RoleFilter filter) {
         Objects.requireNonNull(filter, "Filter не может быть null");
         return rolesById.values().stream()
+                .filter(filter::test)
+                .collect(Collectors.toList());
+    }
+
+    public List<Role> findByFilterParallel(RoleFilter filter) {
+        Objects.requireNonNull(filter, "Filter не может быть null");
+        return rolesById.values().parallelStream()
                 .filter(filter::test)
                 .collect(Collectors.toList());
     }

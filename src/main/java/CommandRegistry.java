@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.io.IOException;
 
 public class CommandRegistry {
     
@@ -46,8 +47,12 @@ public class CommandRegistry {
         parser.registerCommand("help", "справка по командам", CommandRegistry::help);
         parser.registerCommand("stats", "статистика системы", CommandRegistry::stats);
         parser.registerCommand("report-users", "вывести/сохранить отчёт по пользователям", CommandRegistry::reportUsers);
+        parser.registerCommand("report-users-async", "запуск генерации отчёта по пользователям в отдельном потоке", CommandRegistry::reportUsersAsync);
         parser.registerCommand("report-roles", "отчёт по ролям", CommandRegistry::reportRoles);
+        parser.registerCommand("report-roles-async", "запуск генерации отчёта по ролям в отдельном потоке", CommandRegistry::reportRolesAsync);
         parser.registerCommand("report-matrix", "отчет по правам", CommandRegistry::reportMatrix);
+        parser.registerCommand("report-matrix-async", "запуск генерации отчёта по правам в отдельном потоке", CommandRegistry::reportMatrixAsync);
+        parser.registerCommand("save-async", "сохранение данных в файл в фоне", CommandRegistry::saveAsync);
         parser.registerCommand("audit-log", "просмотр лога аудита", CommandRegistry::auditLog);
         parser.registerCommand("clear", "очистить экран", CommandRegistry::clear);
         parser.registerCommand("exit", "выход из программы", CommandRegistry::exit);
@@ -622,6 +627,99 @@ public class CommandRegistry {
     
     private static void auditLog(Scanner scanner, RBACSystem system) {
         system.getAuditLog().printLog();
+    }
+
+    private static void reportUsersAsync(Scanner scanner, RBACSystem system) {
+        System.out.println(ConsoleUtils.formatHeader("Запуск генерации отчёта по пользователям в фоновом режиме..."));
+        system.getExecutorService().submit(() -> {
+            try {
+                ReportGenerator generator = new ReportGenerator();
+                String report = generator.generateUserReportParallel(system.getUserManager(), system.getAssignmentManager());
+                String filename = "user-report-async.txt";
+                generator.exportToFile(report, filename);
+                System.out.println(ConsoleUtils.formatSuccess("Асинхронный отчёт по пользователям сохранён в файл: " + filename));
+                system.getAuditLog().log("REPORT_USERS_ASYNC", system.getCurrentUser(), "file", "Отчёт сохранён в " + filename);
+            } catch (Exception e) {
+                System.err.println(ConsoleUtils.formatError("Ошибка при генерации отчёта: " + e.getMessage()));
+            }
+        });
+    }
+
+    private static void reportRolesAsync(Scanner scanner, RBACSystem system) {
+        System.out.println(ConsoleUtils.formatHeader("Запуск генерации отчёта по ролям в фоновом режиме..."));
+        system.getExecutorService().submit(() -> {
+            try {
+                ReportGenerator generator = new ReportGenerator();
+                String report = generator.generateRoleReportParallel(system.getRoleManager(), system.getAssignmentManager());
+                String filename = "role-report-async.txt";
+                generator.exportToFile(report, filename);
+                System.out.println(ConsoleUtils.formatSuccess("Асинхронный отчёт по ролям сохранён в файл: " + filename));
+                system.getAuditLog().log("REPORT_ROLES_ASYNC", system.getCurrentUser(), "file", "Отчёт сохранён в " + filename);
+            } catch (Exception e) {
+                System.err.println(ConsoleUtils.formatError("Ошибка при генерации отчёта: " + e.getMessage()));
+            }
+        });
+    }
+
+    private static void reportMatrixAsync(Scanner scanner, RBACSystem system) {
+        System.out.println(ConsoleUtils.formatHeader("Запуск генерации матрицы прав в фоновом режиме..."));
+        system.getExecutorService().submit(() -> {
+            try {
+                ReportGenerator generator = new ReportGenerator();
+                String report = generator.generatePermissionMatrixParallel(system.getUserManager(), system.getAssignmentManager());
+                String filename = "matrix-report-async.txt";
+                generator.exportToFile(report, filename);
+                System.out.println(ConsoleUtils.formatSuccess("Асинхронная матрица прав сохранён в файл: " + filename));
+                system.getAuditLog().log("REPORT_MATRIX_ASYNC", system.getCurrentUser(), "file", "Отчёт сохранён в " + filename);
+            } catch (Exception e) {
+                System.err.println(ConsoleUtils.formatError("Ошибка при генерации отчёта: " + e.getMessage()));
+            }
+        });
+    }
+
+    private static void saveAsync(Scanner scanner, RBACSystem system) {
+        System.out.println(ConsoleUtils.formatHeader("Запуск фонового сохранения данных системы..."));
+        system.getExecutorService().submit(() -> {
+            try {
+                String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
+                saveUsersToFile(system.getUserManager(), "users_" + timestamp + ".dat");
+                saveRolesToFile(system.getRoleManager(), "roles_" + timestamp + ".dat");
+                saveAssignmentsToFile(system.getAssignmentManager(), "assignments_" + timestamp + ".dat");
+                System.out.println(ConsoleUtils.formatSuccess("Данные системы сохранены в файлы с временной меткой " + timestamp));
+                system.getAuditLog().log("SAVE_ASYNC", system.getCurrentUser(), "system", "Данные сохранены");
+            } catch (Exception e) {
+                System.err.println(ConsoleUtils.formatError("Ошибка при сохранении данных: " + e.getMessage()));
+            }
+        });
+    }
+
+    private static void saveUsersToFile(UserManager userManager, String filename) throws IOException {
+        try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileWriter(filename))) {
+            for (User user : userManager.findAll()) {
+                writer.printf("%s|%s|%s%n", user.username(), user.fullName(), user.email());
+            }
+        }
+    }
+
+    private static void saveRolesToFile(RoleManager roleManager, String filename) throws IOException {
+        try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileWriter(filename))) {
+            for (Role role : roleManager.findAll()) {
+                writer.printf("%s|%s|%d%n", role.getName(), role.getDescription(), role.getPermissionCount());
+            }
+        }
+    }
+
+    private static void saveAssignmentsToFile(AssignmentManager assignmentManager, String filename) throws IOException {
+        try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileWriter(filename))) {
+            for (RoleAssignment assignment : assignmentManager.findAll()) {
+                writer.printf("%s|%s|%s|%s|%s%n",
+                        assignment.assignmentId(),
+                        assignment.user().username(),
+                        assignment.role().getName(),
+                        assignment.assignmentType(),
+                        assignment.isActive() ? "ACTIVE" : "INACTIVE");
+            }
+        }
     }
     
     private static void clear(Scanner scanner, RBACSystem system) {
