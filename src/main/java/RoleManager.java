@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class RoleManager implements Repository<Role> {
@@ -8,8 +9,8 @@ public class RoleManager implements Repository<Role> {
     private final AssignmentManager assignmentManager;
 
     public RoleManager(AssignmentManager assignmentManager) {
-        this.rolesById = new HashMap<>();
-        this.rolesByName = new HashMap<>();
+        this.rolesById = new ConcurrentHashMap<>();
+        this.rolesByName = new ConcurrentHashMap<>();
         this.assignmentManager = assignmentManager;
     }
 
@@ -17,33 +18,37 @@ public class RoleManager implements Repository<Role> {
     public void add(Role role) {
         Objects.requireNonNull(role, "Role не может быть null");
 
-        if (rolesById.containsKey(role.getId())) {
-            throw new IllegalArgumentException("Role с ID '" + role.getId() + "' уже существует");
-        }
+        synchronized (rolesById) {
+            if (rolesById.containsKey(role.getId())) {
+                throw new IllegalArgumentException("Role с ID '" + role.getId() + "' уже существует");
+            }
 
-        if (rolesByName.containsKey(role.getName())) {
-            throw new IllegalArgumentException("Role с именем '" + role.getName() + "' уже существует");
-        }
+            if (rolesByName.containsKey(role.getName())) {
+                throw new IllegalArgumentException("Role с именем '" + role.getName() + "' уже существует");
+            }
 
-        rolesById.put(role.getId(), role);
-        rolesByName.put(role.getName(), role);
+            rolesById.put(role.getId(), role);
+            rolesByName.put(role.getName(), role);
+        }
     }
 
     @Override
     public boolean remove(Role role) {
         Objects.requireNonNull(role, "Role cannot be null");
-        List<RoleAssignment> assignments = assignmentManager.findByRole(role);
-        if (!assignments.isEmpty()) {
-            throw new IllegalStateException("Cannot delete role '" + role.getName() +
-                    "' because it is assigned to " + assignments.size() + " user(s)");
-        }
+        synchronized (rolesById) {
+            List<RoleAssignment> assignments = assignmentManager.findByRole(role);
+            if (!assignments.isEmpty()) {
+                throw new IllegalStateException("Cannot delete role '" + role.getName() +
+                        "' because it is assigned to " + assignments.size() + " user(s)");
+            }
 
-        Role removed = rolesById.remove(role.getId());
-        if (removed != null) {
-            rolesByName.remove(removed.getName());
-            return true;
+            Role removed = rolesById.remove(role.getId());
+            if (removed != null) {
+                rolesByName.remove(removed.getName());
+                return true;
+            }
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -64,8 +69,10 @@ public class RoleManager implements Repository<Role> {
 
     @Override
     public void clear() {
-        rolesById.clear();
-        rolesByName.clear();
+        synchronized (rolesById) {
+            rolesById.clear();
+            rolesByName.clear();
+        }
     }
 
     public Optional<Role> findByName(String name) {
@@ -99,24 +106,28 @@ public class RoleManager implements Repository<Role> {
         Objects.requireNonNull(roleName, "Role name не может быть null");
         Objects.requireNonNull(permission, "Permission не может быть null");
 
-        Role role = rolesByName.get(roleName);
-        if (role == null) {
-            throw new IllegalArgumentException("Role с именем '" + roleName + "' не найден");
-        }
+        synchronized (rolesById) {
+            Role role = rolesByName.get(roleName);
+            if (role == null) {
+                throw new IllegalArgumentException("Role с именем '" + roleName + "' не найден");
+            }
 
-        role.addPermission(permission);
+            role.addPermission(permission);
+        }
     }
 
     public void removePermissionFromRole(String roleName, Permission permission) {
         Objects.requireNonNull(roleName, "Role name не может быть null");
         Objects.requireNonNull(permission, "Permission не может быть null");
 
-        Role role = rolesByName.get(roleName);
-        if (role == null) {
-            throw new IllegalArgumentException("Role с именем '" + roleName + "' не найден");
-        }
+        synchronized (rolesById) {
+            Role role = rolesByName.get(roleName);
+            if (role == null) {
+                throw new IllegalArgumentException("Role с именем '" + roleName + "' не найден");
+            }
 
-        role.removePermission(permission);
+            role.removePermission(permission);
+        }
     }
 
     public List<Role> findRolesWithPermission(String permissionName, String resource) {
@@ -146,13 +157,15 @@ public class RoleManager implements Repository<Role> {
     public boolean removeByName(String name) {
         Objects.requireNonNull(name, "Name не может быть null");
 
-        Role role = rolesByName.get(name);
-        if (role == null) {
-            return false;
+        synchronized (rolesById) {
+            Role role = rolesByName.get(name);
+            if (role == null) {
+                return false;
+            }
+            rolesById.remove(role.getId());
+            rolesByName.remove(name);
+            return true;
         }
-        rolesById.remove(role.getId());
-        rolesByName.remove(name);
-        return true;
     }
 
     @Override

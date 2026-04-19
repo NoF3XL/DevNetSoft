@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class UserManager implements Repository<User> {
@@ -6,7 +7,7 @@ public class UserManager implements Repository<User> {
     private final Map<String, User> usersByUsername;
 
     public UserManager() {
-        this.usersByUsername = new HashMap<>();
+        this.usersByUsername = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -14,11 +15,13 @@ public class UserManager implements Repository<User> {
         Objects.requireNonNull(user, "Пользователь не может быть null");
 
         String username = user.username();
-        if (usersByUsername.containsKey(username)) {
-            throw new IllegalArgumentException("Пользователь с именем пользователя '" + username + "' уже существует");
-        }
+        synchronized (usersByUsername) {
+            if (usersByUsername.containsKey(username)) {
+                throw new IllegalArgumentException("Пользователь с именем пользователя '" + username + "' уже существует");
+            }
 
-        usersByUsername.put(username, user);
+            usersByUsername.put(username, user);
+        }
     }
 
     @Override
@@ -86,12 +89,14 @@ public class UserManager implements Repository<User> {
         Objects.requireNonNull(username, "Username не может быть null");
         Objects.requireNonNull(newFullName, "Full name не может быть null");
         Objects.requireNonNull(newEmail, "Email не может быть null");
-        User existingUser = usersByUsername.get(username);
-        if (existingUser == null) {
-            throw new IllegalArgumentException("Пользователь с именем пользователя '" + username + "' не найдено");
+        synchronized (usersByUsername) {
+            User existingUser = usersByUsername.get(username);
+            if (existingUser == null) {
+                throw new IllegalArgumentException("Пользователь с именем пользователя '" + username + "' не найдено");
+            }
+            User updatedUser = User.create(username, newFullName, newEmail);
+            usersByUsername.put(username, updatedUser);
         }
-        User updatedUser = User.create(username, newFullName, newEmail);
-        usersByUsername.put(username, updatedUser);
     }
 
     public boolean removeByUsername(String username) {

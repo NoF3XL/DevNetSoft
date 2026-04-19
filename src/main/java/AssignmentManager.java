@@ -2,6 +2,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class AssignmentManager implements Repository<RoleAssignment> {
@@ -12,7 +13,7 @@ public class AssignmentManager implements Repository<RoleAssignment> {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     public AssignmentManager(UserManager userManager, RoleManager roleManager) {
-        this.assignmentsById = new HashMap<>();
+        this.assignmentsById = new ConcurrentHashMap<>();
         this.userManager = userManager;
         this.roleManager = roleManager;
     }
@@ -20,10 +21,6 @@ public class AssignmentManager implements Repository<RoleAssignment> {
     @Override
     public void add(RoleAssignment assignment) {
         Objects.requireNonNull(assignment, "Assignment не может быть null");
-
-        if (assignmentsById.containsKey(assignment.assignmentId())) {
-            throw new IllegalArgumentException("Assignment с ID '" + assignment.assignmentId() + "' уже существует");
-        }
 
         User user = assignment.user();
         Role role = assignment.role();
@@ -36,15 +33,21 @@ public class AssignmentManager implements Repository<RoleAssignment> {
             throw new IllegalArgumentException("Role '" + role.getName() + "' не существует");
         }
 
-        boolean hasActiveAssignment = assignmentsById.values().stream()
-                .filter(a -> a.user().equals(user) && a.role().equals(role))
-                .anyMatch(RoleAssignment::isActive);
+        synchronized (assignmentsById) {
+            if (assignmentsById.containsKey(assignment.assignmentId())) {
+                throw new IllegalArgumentException("Assignment с ID '" + assignment.assignmentId() + "' уже существует");
+            }
 
-        if (hasActiveAssignment) {
-            throw new IllegalStateException("User '" + user.username() + "' уже есть активное назначение для роли '" + role.getName() + "'");
+            boolean hasActiveAssignment = assignmentsById.values().stream()
+                    .filter(a -> a.user().equals(user) && a.role().equals(role))
+                    .anyMatch(RoleAssignment::isActive);
+
+            if (hasActiveAssignment) {
+                throw new IllegalStateException("User '" + user.username() + "' уже есть активное назначение для роли '" + role.getName() + "'");
+            }
+
+            assignmentsById.put(assignment.assignmentId(), assignment);
         }
-
-        assignmentsById.put(assignment.assignmentId(), assignment);
     }
 
     @Override
@@ -147,16 +150,18 @@ public class AssignmentManager implements Repository<RoleAssignment> {
     public void revokeAssignment(String assignmentId) {
         Objects.requireNonNull(assignmentId, "Assignment ID не может быть null");
 
-        RoleAssignment assignment = assignmentsById.get(assignmentId);
-        if (assignment == null) {
-            throw new IllegalArgumentException("Assignment с ID '" + assignmentId + "' не найден");
-        }
+        synchronized (assignmentsById) {
+            RoleAssignment assignment = assignmentsById.get(assignmentId);
+            if (assignment == null) {
+                throw new IllegalArgumentException("Assignment с ID '" + assignmentId + "' не найден");
+            }
 
-        if (assignment.assignmentType().equals("PERMANENT")) {
-            PermanentAssignment permAssignment = (PermanentAssignment) assignment;
-            permAssignment.revoke();
-        } else {
-            assignmentsById.remove(assignmentId);
+            if (assignment.assignmentType().equals("PERMANENT")) {
+                PermanentAssignment permAssignment = (PermanentAssignment) assignment;
+                permAssignment.revoke();
+            } else {
+                assignmentsById.remove(assignmentId);
+            }
         }
     }
 
@@ -164,17 +169,19 @@ public class AssignmentManager implements Repository<RoleAssignment> {
         Objects.requireNonNull(assignmentId, "Assignment ID не может быть null");
         Objects.requireNonNull(newExpirationDate, "Новый срок годности не может быть null");
 
-        RoleAssignment assignment = assignmentsById.get(assignmentId);
-        if (assignment == null) {
-            throw new IllegalArgumentException("Assignment с ID '" + assignmentId + "' не найден");
-        }
+        synchronized (assignmentsById) {
+            RoleAssignment assignment = assignmentsById.get(assignmentId);
+            if (assignment == null) {
+                throw new IllegalArgumentException("Assignment с ID '" + assignmentId + "' не найден");
+            }
 
-        if (!assignment.assignmentType().equals("TEMPORARY")) {
-            throw new IllegalArgumentException("Assignment не является временным");
-        }
+            if (!assignment.assignmentType().equals("TEMPORARY")) {
+                throw new IllegalArgumentException("Assignment не является временным");
+            }
 
-        TemporaryAssignment tempAssignment = (TemporaryAssignment) assignment;
-        tempAssignment.extend(newExpirationDate);
+            TemporaryAssignment tempAssignment = (TemporaryAssignment) assignment;
+            tempAssignment.extend(newExpirationDate);
+        }
     }
 
     public List<RoleAssignment> findAssignmentsByUserAndRole(User user, Role role) {
@@ -187,61 +194,69 @@ public class AssignmentManager implements Repository<RoleAssignment> {
     }
 
     public Map<User, List<Role>> getUserRolesMap() {
-        Map<User, List<Role>> result = new HashMap<>();
+        synchronized (assignmentsById) {
+            Map<User, List<Role>> result = new HashMap<>();
 
-        for (RoleAssignment assignment : getActiveAssignments()) {
-            result.computeIfAbsent(assignment.user(), k -> new ArrayList<>())
-                    .add(assignment.role());
+            for (RoleAssignment assignment : getActiveAssignments()) {
+                result.computeIfAbsent(assignment.user(), k -> new ArrayList<>())
+                        .add(assignment.role());
+            }
+
+            return result;
         }
-
-        return result;
     }
 
     public List<RoleAssignment> getAssignmentsExpiringBefore(String date) {
-        Objects.requireNonNull(date, "Date cannot be null");
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        LocalDateTime filterDate;
-        try {
-            filterDate = LocalDateTime.parse(date, formatter);
-        } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Date must be in format: yyyy-MM-dd HH:mm", e);
+        synchronized (assignmentsById) {
+            Objects.requireNonNull(date, "Date cannot be null");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            LocalDateTime filterDate;
+            try {
+                filterDate = LocalDateTime.parse(date, formatter);
+            } catch (DateTimeParseException e) {
+                throw new IllegalArgumentException("Date must be in format: yyyy-MM-dd HH:mm", e);
+            }
+            return assignmentsById.values().stream()
+                    .filter(a -> a.assignmentType().equals("TEMPORARY"))
+                    .filter(a -> {
+                        TemporaryAssignment temp = (TemporaryAssignment) a;
+                        try {
+                            LocalDateTime expiresAt = LocalDateTime.parse(temp.getExpiresAt(), formatter);
+                            return expiresAt.isBefore(filterDate);
+                        } catch (DateTimeParseException e) {
+                            return false;
+                        }
+                    })
+                    .collect(Collectors.toList());
         }
-        return assignmentsById.values().stream()
-                .filter(a -> a.assignmentType().equals("TEMPORARY"))
-                .filter(a -> {
-                    TemporaryAssignment temp = (TemporaryAssignment) a;
-                    try {
-                        LocalDateTime expiresAt = LocalDateTime.parse(temp.getExpiresAt(), formatter);
-                        return expiresAt.isBefore(filterDate);
-                    } catch (DateTimeParseException e) {
-                        return false;
-                    }
-                })
-                .collect(Collectors.toList());
     }
 
     public boolean removeByUser(User user) {
         Objects.requireNonNull(user, "User не может быть null");
 
-        List<String> toRemove = assignmentsById.values().stream()
-                .filter(a -> a.user().equals(user))
-                .map(RoleAssignment::assignmentId)
-                .collect(Collectors.toList());
+        synchronized (assignmentsById) {
+            List<String> toRemove = assignmentsById.values().stream()
+                    .filter(a -> a.user().equals(user))
+                    .map(RoleAssignment::assignmentId)
+                    .collect(Collectors.toList());
 
-        toRemove.forEach(assignmentsById::remove);
-        return !toRemove.isEmpty();
+            toRemove.forEach(assignmentsById::remove);
+            return !toRemove.isEmpty();
+        }
     }
 
     public boolean removeByRole(Role role) {
         Objects.requireNonNull(role, "Role  null");
 
-        List<String> toRemove = assignmentsById.values().stream()
-                .filter(a -> a.role().equals(role))
-                .map(RoleAssignment::assignmentId)
-                .collect(Collectors.toList());
+        synchronized (assignmentsById) {
+            List<String> toRemove = assignmentsById.values().stream()
+                    .filter(a -> a.role().equals(role))
+                    .map(RoleAssignment::assignmentId)
+                    .collect(Collectors.toList());
 
-        toRemove.forEach(assignmentsById::remove);
-        return !toRemove.isEmpty();
+            toRemove.forEach(assignmentsById::remove);
+            return !toRemove.isEmpty();
+        }
     }
 
     @Override
