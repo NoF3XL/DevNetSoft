@@ -2,6 +2,7 @@ import java.util.*;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.*;
 
 public class AuditLog {
     public record AuditEntry(
@@ -12,18 +13,40 @@ public class AuditLog {
             String details
     ) {}
 
-    private final List<AuditEntry> entries;
+    private final CopyOnWriteArrayList<AuditEntry> entries;
+    private final BlockingQueue<AuditEntry> queue;
+    private final Thread consumerThread;
+    private volatile boolean running;
     private static final DateTimeFormatter TIMESTAMP_FORMATTER = 
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public AuditLog() {
-        this.entries = new ArrayList<>();
+        this.entries = new CopyOnWriteArrayList<>();
+        this.queue = new LinkedBlockingQueue<>();
+        this.running = true;
+        this.consumerThread = new Thread(this::processQueue, "AuditLog-Consumer");
+        this.consumerThread.setDaemon(true);
+        this.consumerThread.start();
+    }
+
+    private void processQueue() {
+        while (running || !queue.isEmpty()) {
+            try {
+                AuditEntry entry = queue.poll(100, TimeUnit.MILLISECONDS);
+                if (entry != null) {
+                    entries.add(entry);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
     }
 
     public void log(String action, String performer, String target, String details) {
         String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMATTER);
         AuditEntry entry = new AuditEntry(timestamp, action, performer, target, details);
-        entries.add(entry);
+        queue.offer(entry);
     }
 
     public List<AuditEntry> getAll() {
@@ -80,6 +103,16 @@ public class AuditLog {
             System.out.println("Лог сохранён в файл: " + filename);
         } catch (IOException e) {
             System.err.println("Ошибка при сохранении лога: " + e.getMessage());
+        }
+    }
+
+    public void shutdown() {
+        running = false;
+        consumerThread.interrupt();
+        try {
+            consumerThread.join(1000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 }

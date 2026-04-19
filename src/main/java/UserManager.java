@@ -67,6 +67,13 @@ public class UserManager implements Repository<User> {
                 .collect(Collectors.toList());
     }
 
+    public List<User> findByFilterParallel(UserFilter filter) {
+        Objects.requireNonNull(filter, "Filter не может быть null");
+        return usersByUsername.values().parallelStream()
+                .filter(filter::test)
+                .collect(Collectors.toList());
+    }
+
     public List<User> findAll(UserFilter filter, Comparator<User> sorter) {
         Objects.requireNonNull(filter, "Filter не может быть null");
         Objects.requireNonNull(sorter, "Sorter не может быть null");
